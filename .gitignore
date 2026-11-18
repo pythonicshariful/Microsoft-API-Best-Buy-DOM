@@ -1,0 +1,11 @@
+# Capture artifacts: request/response headers + Microsoft internal IDs — keep local, never commit
+network-capture/*/network_log.json
+network-capture/*/traffic.har
+network-capture/*/page_dump.txt
+network-capture/*/endpoints.txt
+network-capture/api-probes/
+*.har
+
+# Muse snapshot sync metadata (never commit)
+*.muse-github-snapshot-sync.json
+*.muse-github-snapshot-sync.json.tmp-*
