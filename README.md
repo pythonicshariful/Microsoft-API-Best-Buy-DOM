@@ -1,6 +1,6 @@
 # Xbox X25 Stock Monitor
 
-**Version 2.9** — a small browser script that watches the Microsoft Store page for the **Xbox Series X25 Limited Edition (1TB, $899.99)** and buys it for you automatically when it comes back in stock.
+**Version 2.10** — a small browser script that watches the Microsoft Store page for the **Xbox Series X25 Limited Edition (1TB, $899.99)** and buys it for you automatically when it comes back in stock.
 
 No technical knowledge needed. If you can install a browser add-on, you can use this.
 
@@ -31,8 +31,8 @@ While it watches, it plays a sound and flashes the browser tab title when it fin
 ## Install (do this once)
 
 1. Install **Tampermonkey** in your browser and turn it on.
-2. Open the file **`xbox-x25-stock-monitor-v2.9.user.js`** from this repo. Tampermonkey will ask if you want to install it — click **Install**.
-3. If you installed an older version before, remove it first: in Tampermonkey, delete any older "Xbox X25 Stock Monitor" script, so only version 2.9 is running. Two versions at once will fight each other.
+2. Open the file **`xbox-x25-stock-monitor-v2.10.user.js`** from this repo. Tampermonkey will ask if you want to install it — click **Install**.
+3. If you installed an older version before, remove it first: in Tampermonkey, delete any older "Xbox X25 Stock Monitor" script, so only version 2.10 is running. Two versions at once will fight each other.
 4. Open the Xbox page above. A small dark panel appears in the **bottom-right corner**. That is the script.
 
 ---
@@ -50,10 +50,19 @@ While it watches, it plays a sound and flashes the browser tab title when it fin
 - **Check delay (random) — min / max seconds.** How long it waits between checks. Default is **4 to 12 seconds**, and each wait is a different random time inside that range. You can change it — for example, 10 to 30 seconds to check more slowly. Smaller numbers check faster; bigger numbers are gentler on the store.
 - **ZIP / Region.** The delivery area the store checks stock for. Default is ZIP **95037**, region **CA**. You can change it to your own delivery area.
 - **Cart Qty.** How many consoles to buy. Default is **1**. Change it before you press Start if you want more.
-- **Microsoft account password (test account only).** Type the test account password here to let the script sign in by itself. It is saved in your browser only — never in the script file — and it is cleared after a successful sign-in. Press **Clear** to remove it. Never type your main account password here.
+- **Microsoft account password (test account only).** Type the test account password here to let the script sign in by itself. It is saved in your browser only — never in the script file — and it **stays saved until you press Clear**. Never type your main account password here.
 - **Auto-attempt first click when in stock.** On by default. This means the script clicks for you when it finds stock. If you turn it off, it only alerts you and waits.
 - **Test sound.** Plays the alert sound so you know what it sounds like.
 - **Stop.** Stops everything.
+
+### Your settings are saved
+
+Everything you set in the panel — **Cart Qty, ZIP / Region, check delay, Auto-attempt, the Auto PLACE ORDER box, and the saved password** — is saved in your browser the moment you change it, and it comes back the next time you open the page. **Nothing resets when the page changes or reloads.** Set it once and it stays.
+
+Two things to know:
+
+- The **Auto PLACE ORDER box stays on** until you uncheck it (or an order completes). Uncheck it after every order, so a later session cannot buy by accident.
+- The **password stays saved** until you press **Clear**. The box always looks empty — that is normal; the password is saved, not lost.
 
 ### Signing in by itself (optional)
 
@@ -61,7 +70,7 @@ If the browser is not signed in to the Microsoft account, the script can sign in
 
 1. In the panel, type the **test account password** into the "Microsoft account password" box. As soon as you leave the box, it is saved in your browser only. The box goes blank again — that is normal; the password is saved, not lost.
 2. When the Microsoft sign-in page appears, the script types the saved password one character at a time, like a person, and clicks **Next**.
-3. After a successful sign-in, the saved password is **cleared** from your browser.
+3. After a successful sign-in, the saved password **stays saved** in your browser until you press **Clear** — so if the session ends later, it can sign in again without you re-typing it.
 
 What stays yours to do:
 
@@ -78,7 +87,7 @@ This checkbox is **OFF by default**, and that is on purpose.
 - **Off (default):** the script stops at the checkout page. It never buys anything. You finish the purchase yourself.
 - **On:** the script clicks **Place order** and completes a **real purchase** that charges the payment method saved on your Microsoft account.
 
-Only turn it on when you are ready to buy. The first time it runs with the box on, it will place a real order.
+Only turn it on when you are ready to buy. The first time it runs with the box on, it will place a real order. The box **stays on** until you uncheck it or an order completes — uncheck it after every order.
 
 Before it clicks Place order, the panel writes the order total in its log, so you can see the amount.
 
@@ -102,6 +111,7 @@ Before it clicks Place order, the panel writes the order total in its log, so yo
 | `Password needed — check the panel` | No password is saved, so the script cannot sign in. | Type the test account password in the panel's password box and press Start. |
 | `Sign-in error` | Wrong password, or Microsoft is asking for extra verification. | Check the tab. Fix the password in the panel, or finish signing in yourself. |
 | `No password field appeared` | This may be the email step, not the password step. | Type the email address yourself; the password step follows. |
+| `Already running — waiting for...` | The flow is already running; pressing Start again does nothing new. | Wait for it, or press **Stop** if you want to stop it. |
 | `Quantity is now 2` (or another number) | It changed the cart quantity to the number you set. | Check that the number is the one you wanted. |
 
 If it stops for any other reason, copy the whole log from the panel and send it to the person who gave you the script.
@@ -111,7 +121,7 @@ If it stops for any other reason, copy the whole log from the panel and send it 
 ## What it never does
 
 - It signs in only if you saved the test account password in the panel. It never signs in on its own without that.
-- It never saves the password in the script file. The password lives in your browser only, and it is cleared after a successful sign-in.
+- It never saves the password in the script file. The password lives in your browser only, and it stays saved until you press **Clear**.
 - It never types, reads, or changes payment details.
 - It never changes your account settings.
 - It never buys anything unless the **Auto PLACE ORDER** box is on.
@@ -130,6 +140,6 @@ If it stops for any other reason, copy the whole log from the panel and send it 
 
 ## Files in this repo
 
-- **`xbox-x25-stock-monitor-v2.9.user.js`** — the script. This is the only version. Install this one.
+- **`xbox-x25-stock-monitor-v2.10.user.js`** — the script. This is the only version. Install this one.
 - **`README.md`** — this guide.
 - **`network-capture/MICROSOFT-FINDINGS.md`** — technical notes on how the store's stock check works (for developers only).
