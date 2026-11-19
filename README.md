@@ -657,3 +657,47 @@ Still unverified: the X25 restock path (X25 remains OOS); the full
 chain to a placed order on a real browser (by design, the script
 never ran it armed here); whether the Review click puts the item in
 the cart (same VM block as before).
+
+## v2.8 — Random check delay + new glassmorphism panel (Nov 19, 2026)
+
+Shariful: the panel was too basic, and the fixed check interval looks
+like a metronome. Two changes.
+
+**Random delay.** The fixed poll interval is gone. Every stock check
+now waits a RANDOM delay between a min and a max taken from the
+panel (default 4–12 seconds, clamped to 1–120s, max always >= min).
+Microsoft API polls and Best Buy DOM checks both use the same range,
+and the Best Buy page reload is jittered too (100–140s instead of
+exactly 120s). The 429 backoff doubles the whole range (max capped
+at 60s). A "Next check in ~Ns" line counts down to the next poll so
+the randomness is visible. Change the numbers in the panel while it
+runs and the new range applies from the next check.
+
+**New panel.** Redesigned with the ui-ux-pro-max skill (Real-Time /
+Operations pattern, Glassmorphism style): frosted-glass dark panel
+(slate #0F172A / #1E293B, status green #22C55E, foreground #F8FAFC),
+gradient header with a live status dot that follows the status color,
+grouped sections (Monitoring / Cart / Safety) with labels, 38px
+buttons with hover transitions, visible focus rings on every control,
+and a collapse button (header stays, body hides). Same controls as
+before — Start/Stop, Test sound, auto-attempt, Cart Qty, ZIP/Region,
+Auto place order checkbox (still OFF by default) — plus the new
+min/max delay inputs.
+
+Verification: harness (`tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`) now 22/22 — the 20 earlier
+checks plus T19 (randDelay: 200 samples all inside [4000, 12000],
+spread 7874ms, 196 distinct values, reversed args also bounded) and
+T20 (the WHOLE v2.8 script loaded into a blank page: panel renders,
+delay inputs default 4/12, Place order checkbox OFF by default,
+collapse hides/shows the body). The new panel could NOT be
+live-verified on the real Microsoft page from this VM (same 403
+block as before) — the real-browser retest is the proof.
+
+Retest: disable/remove v2.7 in Tampermonkey; install v2.8 (do not
+run both). Open the S refurbished page — the panel should look
+different (glass, green status dot, sections, collapse button).
+Press Start: the "Next check in ~Ns" line should count down, and
+each check should wait a different random time (watch the log
+timestamps). Set the delay to e.g. 10–30s in the panel to see it
+slow down.
