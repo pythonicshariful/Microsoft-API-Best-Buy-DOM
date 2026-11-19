@@ -512,3 +512,92 @@ Still unverified: the X25 restock path (X25 remains OOS); where the
 Review click lands on a real signed-out browser after the 25s poll
 (sign-in page expected); the full chain to a placed order is never
 done by the script (by design).
+
+## v2.6 — Cart page: quantity + Checkout (Nov 19, 2026)
+
+Shariful asked for the cart step: on `/store/cart*`, select the
+quantity like a real human and click Checkout. He pasted the exact
+HTML from his own browser: a quantity
+`<select id="QuantityPicker---8P01KZXZ5J21">` (options 1/2/3) inside
+`<div class="custom-select mw-fit-content cartco-quantity-select">`,
+and `<button type="button" class="btn btn-primary btn-block"
+autofocus>Checkout</button>` (no test id).
+
+Live probes first (headless Chromium on the real S refurbished
+page, 4 runs, `tests/test_cart_flow*.py`): the Review click DOES
+land on the cart URL (+4-6s, so v2.5's 25s poll catches it). BUT the
+cart UI never renders in this environment: the cart page's purchase
+UI comes from purchaseui.production.store-web.dynamics.com, which
+answers 403 Access Denied to this VM's egress (Akamai) — no quantity
+select and no Checkout button appear even after 60s of polling. Two
+things WERE proven: (1) the cart UI lives inside
+`<iframe id="purchase-frame">` with an EMPTY src — its document is
+same-origin and READABLE from the top document (contentDocument
+works, no SecurityError; the Access Denied text itself was read from
+inside the frame), so a microsoft.com userscript CAN reach the
+quantity select and Checkout button inside it. (2) The cart backend
+itself works from here (`PUT .../cart/loadCart` 200,
+`GET /store/buy/cartcount` 200) — only the purchase-UI render is
+blocked. Whether the Review click actually put the item in the cart
+could not be confirmed from here (the cartItemCount cookie is not
+visible to page JS); the script checks for the UI and stops for a
+human if it never loads, instead of clicking blind.
+
+v2.6: `@match` now also covers `https://www.microsoft.com/*/store/cart*`.
+After the Review click lands on the cart, the script carries the flow
+over with a session flag (`x25_cart_flow_v2`, set before the Review
+step's stop clears the monitor flag) and auto-resumes the cart flow
+on the cart page; pressing Start on the cart page runs it too. The
+flow waits up to 30s for the cart UI (quantity select or Checkout
+button, searched in the top document AND the #purchase-frame), and
+says plainly if the frame shows "Access Denied" — that is the store
+backend blocking the browser, not a script failure. Quantity is a
+PANEL setting, default 1 (the buyer ordered one console); change it
+in the panel before Start if the buyer wants 2 or 3. `humanSelect()`
+scrolls the select into view, focuses it, fires pointer events, then
+sets the value through the native HTMLSelectElement setter of the
+select's OWN window (so React-controlled selects notice it) +
+input/change events, and verifies the value stuck (re-querying by id
+in case the page re-rendered the node). Then it clicks Checkout
+(exact text, btn-primary preferred) with the same humanClick
+sequence and polls up to 25s for the next state (navigation /
+sign-in prompt / checkout page), then stops for a human. One retry
+if the button re-enables. Also fixed: the panel header and load line
+still said "v2.3" — they now show the real version.
+
+Safety unchanged: Checkout is a navigation step only. The script
+NEVER clicks Place Order / checkout submit, NEVER signs in, NEVER
+fills payment. Sign-in and payment stay manual, by the buyer on his
+own account.
+
+Verification: harness (`tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`) now 17/17 — the 14 earlier
+checks plus T13/T14/T15 on a mock of the pasted cart HTML (quantity
+select + Checkout inside the #purchase-frame iframe): the finder
+reaches into the frame, humanSelect changes 1 → 2 (mock subtotal
+$399.99 → $799.98) and back to 1, the Checkout click disables the
+button and `checkoutState()` sees the sign-in prompt, and an
+Access-Denied frame is detected as blocked. The quantity/Checkout
+clicks could NOT be live-proven from this VM (403 on the purchase UI);
+the real-browser retest is the proof.
+
+Retest (same Series S refurbished page, still in stock, signed-in
+browser is best — the cart UI needs a normal session):
+1. Disable/remove v2.5 in Tampermonkey; install v2.6 (do not run both).
+2. Panel: Cart Qty is 1 by default — leave it, unless the buyer
+   wants 2 or 3.
+3. Open the page, press Start. Expect: option → Continue → Step 2 →
+   "Clicking Review and checkout." → cart page → "Cart UI loaded
+   (1 quantity select(s), Checkout button found)." → "Quantity
+   already 1 — leaving it." → "Clicking Checkout." → then
+   "Checkout clicked — sign-in prompt shown" (or "navigated to ...").
+4. If the log says "Cart UI is blocked in this browser" with
+   Access Denied, the store backend is blocking that browser — try
+   the buyer's normal browser/session, not a datacenter IP.
+5. If it still fails, send the full panel log.
+
+Still unverified: the X25 restock path (X25 remains OOS); the
+quantity/Checkout clicks on a real cart (blocked from this VM);
+whether the Review click puts the item in the cart (same reason);
+the full chain to a placed order is never done by the script (by
+design).
