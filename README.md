@@ -601,3 +601,59 @@ quantity/Checkout clicks on a real cart (blocked from this VM);
 whether the Review click puts the item in the cart (same reason);
 the full chain to a placed order is never done by the script (by
 design).
+
+## v2.7 — Checkout page: Place order (ARMED ONLY) (Nov 19, 2026)
+
+Shariful asked for the final step: on `/store/checkout`, click
+`<button type="button" class="btn btn-primary btn-block"
+data-bi-dnt="true">Place order</button>`.
+
+This click PLACES A REAL ORDER and charges the saved payment method,
+so it is gated — it never runs by default. The panel has an "Auto
+place order" checkbox, default OFF. The flow runs only when BOTH
+session flags are set: CHECKOUT_KEY (the bot's own flow reached the
+checkout page from the cart — set when the cart's Checkout click
+lands) AND PLACE_KEY (the user checked the box). On auto-resume both
+are required; on a manual Start press on the checkout page the
+checked box alone is the go-ahead. If the gate fails, the script
+logs that Place order is NOT armed and stops for a human. The button
+is matched by exact text "Place order" (btn-primary preferred, no
+test id); the search covers the top document AND every same-origin
+iframe (the checkout UI may live in #purchase-frame like the cart's).
+Before clicking, the script logs the order total read from the page
+(Total / Order total / Total due + $ amount); after clicking it
+polls up to 25s for the confirmation ("Thank you" / "Order placed" /
+"Order number") or an error (payment declined / something went
+wrong), alerts, and stops. One retry if the button re-enables.
+
+Verification: harness (`tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`) now 20/20 — the 17 earlier
+checks plus T16/T17/T18 on mocks of the pasted button (top document
+and inside the #purchase-frame iframe): the finder finds it, the
+total reads as "Order total $899.99", the click disables the button
+and `placeOrderState()` sees the confirmation, and the arming gate
+returns true ONLY when both session flags are set (neither / one
+only → false). Could NOT be live-proven from this VM: the cart UI
+already 403s here, and the checkout page needs a signed-in session
+with an item in the cart — the real-browser retest is the proof, and
+the first armed run on a real browser WILL place a real order, so
+arm it only when the buyer is ready to buy.
+
+Retest (signed-in browser, item in the cart, payment method saved):
+1. Disable/remove v2.6 in Tampermonkey; install v2.7 (do not run both).
+2. On the configure page, check "Auto place order" in the panel
+   ONLY when ready to buy — the box is OFF by default and the script
+   will not place an order while it is off.
+3. Press Start. Expect the chain: option → Continue → Step 2 →
+   "Clicking Review and checkout." → cart → quantity → "Clicking
+   Checkout." → checkout page → "Order total read from the page: ..."
+   → "Clicking Place order — this places a REAL order." →
+   "ORDER CONFIRMED — check the confirmation / order number on the tab."
+4. If the log says "Auto place order is NOT armed", the box was not
+   checked (or the tab did not come from the bot flow) — nothing was
+   bought.
+
+Still unverified: the X25 restock path (X25 remains OOS); the full
+chain to a placed order on a real browser (by design, the script
+never ran it armed here); whether the Review click puts the item in
+the cart (same VM block as before).
