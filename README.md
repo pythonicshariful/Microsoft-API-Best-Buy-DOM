@@ -451,3 +451,64 @@ Retest (same Series S refurbished page, still in stock):
 Still unverified: the X25 restock path (X25 remains OOS); the full
 chain to Review and checkout was never clicked through (by design —
 no order is placed by the script).
+
+## v2.5 — Review and checkout click (Nov 19, 2026)
+
+Shariful confirmed v2.4 works ("working thanks") and asked for the
+next button to be clicked too: "Review and checkout"
+(`data-automation-test-id="configuratorV35-BottomBar-checkout-button"`,
+class `btn btn-primary btn-block mt-3`, stpidx=1, on Step 2
+Accessories; the button he pasted carries pid 8p01kzxz5j21, sku 8CZ4,
+the S refurbished page).
+
+Live check first (headless Chromium on the real S refurbished page,
+`tests/test_review_checkout.py`): the v2.4 flow reaches Step 2, the
+Review button is exactly 1, not disabled, visible (533x65 at
+1227,631); the synthetic humanClick sequence runs (clicked_done=true)
+and the button goes `disabled: true` — its processing state — so the
+click REGISTERS. But the page had not navigated after 5s (URL, title,
+headings and body text all unchanged), so v2.5 does not assume an
+instant navigation.
+
+v2.5: after Step 2 loads, the script clicks Review and checkout
+(test id first, exact-text fallback) and polls `reviewState()` every
+1s for up to 25s for the next state — URL navigation (e.g. to
+login.live.com when signed out), a sign-in prompt, or a review/cart
+heading — then it alerts and stops for a human. If the button
+re-enables (the click did not take), it retries once. The heading
+check is scoped to h1/h2 and to phrases that do NOT appear on Step 2
+("Review your order", "Your cart"): a bare "Checkout" match would
+false-fire on the button's own text, and the page header always shows
+"Sign in", so the sign-in test needs the "to continue" phrasing, the
+login host, or a password field.
+
+Safety unchanged: Review and checkout is a navigation step only. The
+script NEVER clicks Place Order / checkout submit, NEVER signs in,
+NEVER fills payment. Sign-in and payment stay manual, by the buyer on
+his own account.
+
+Verification: harness (`tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`) now 14/14 — the 10 earlier
+checks plus T11/T12 on both mocks: Review found by test id,
+humanClick disables it, `reviewState()` sees the sign-in prompt
+afterwards, an h2 "Review your order" reads as a review state, and
+the text fallback still finds the button with the test id removed.
+The 20-second live poll of where the Review click lands was still
+running when v2.5 was pushed; if it shows a different landing state,
+a v2.5.1 follows.
+
+Retest (same Series S refurbished page, still in stock):
+1. Disable/remove v2.4 in Tampermonkey; install v2.5 (do not run both).
+2. Open the page, press Start. Expect: "Selectable console option
+   found", "Option already selected on load (pre-selected toggle).
+   Skipping option click.", "Clicking Continue to accessories.",
+   "Step 2 Accessories loaded. Continuing to Review and checkout.",
+   "Clicking Review and checkout.", then "Review and checkout
+   clicked — sign-in prompt shown. Stopping here: sign-in and
+   payment are manual." (or "navigated to ...").
+3. If it still fails, send the full panel log.
+
+Still unverified: the X25 restock path (X25 remains OOS); where the
+Review click lands on a real signed-out browser after the 25s poll
+(sign-in page expected); the full chain to a placed order is never
+done by the script (by design).
