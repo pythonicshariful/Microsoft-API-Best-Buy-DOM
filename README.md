@@ -351,3 +351,38 @@ Retest (same Series S refurbished page, still in stock):
 Still unverified: the X25 restock path (X25 remains OOS); the full
 chain to Review and checkout was never clicked through (by design —
 no order is placed by the script).
+
+## Update, Nov 19: v2.3 — scroll into view before clicking
+
+Shariful retested v2.2 on the same Series S refurbished page: still no
+click, or the click did nothing. Fix (his direction, and correct):
+humanClick() now scrolls the target into the middle of the viewport
+first (smooth scroll, ~700ms settle), and only then computes the
+button's position and runs the pointer sequence. Reason: a button below
+the fold may not be rendered/hydrated until it is scrolled into view,
+so clicking it cold can silently do nothing; a real human always
+scrolls to the button before clicking it. The scroll applies to both
+click sites (console option and Continue). The panel log now shows
+"Scrolling the button into view first, then clicking." before each
+click. If the button still has no size after scrolling, the old
+el.click() fallback is kept.
+
+Harness verification (headless Chromium, same mock pages as v2.2;
+`tests/test_finder.py`, exact file code extracted by
+`tests/extract_finder.js`): 8/8 checks pass. Live retest on the real
+page still pending — if it still fails, the panel log will show
+whether it stopped at the option or at Continue.
+
+Retest (same Series S refurbished page, still in stock):
+1. Disable/remove v2.2 in Tampermonkey; install v2.3 (do not run both).
+2. Open the page, press Start. Expect: "Selectable console option
+   found", "Option already selected on load (pre-selected toggle).
+   Skipping option click.", "Clicking Continue to accessories.",
+   "Scrolling the button into view first, then clicking.", "Step 2
+   Accessories loaded." You will see the page scroll to the button
+   and the small blue dot move to it.
+3. If it still fails, send the full panel log.
+
+Still unverified: the X25 restock path (X25 remains OOS); the full
+chain to Review and checkout was never clicked through (by design —
+no order is placed by the script).
