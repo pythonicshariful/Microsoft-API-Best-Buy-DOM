@@ -386,3 +386,68 @@ Retest (same Series S refurbished page, still in stock):
 Still unverified: the X25 restock path (X25 remains OOS); the full
 chain to Review and checkout was never clicked through (by design —
 no order is placed by the script).
+
+## Update, Nov 19: v2.4 — the real option structure (empty button + <li> card)
+
+Shariful retested v2.3: still no click. This time the failure was
+diagnosed live instead of guessed at. A Playwright probe of the real
+page (headless Chromium, via a local CONNECT forwarder — the VM's
+egress proxy blocks Chromium's unauthenticated CONNECT and MITMs TLS)
+proved two things:
+
+1. SYNTHETIC CLICKS WORK. The exact v2.3 pointer sequence, dispatched
+   on the Continue button, loaded Step 2 Accessories ("Add your
+   accessories", "Review and checkout", no validation). The page does
+   NOT ignore untrusted events. Every earlier failure was in the
+   finder, never in the click.
+2. THE OPTION IS NOT A BUTTON WITH TEXT. The real structure is an
+   EMPTY <button class="option-button" aria-labelledby="<li id>"
+   aria-pressed="true|false"
+   data-automation-test-id="configuratorV35-selection-group-option-button-*">
+   (no textContent, no aria-label) inside an <li
+   class="selection-group-option-v35 [is-checked]" aria-current="true">
+   card whose <h4> says "512 GB". The accessibility tree shows it as a
+   button — the DOM does not. And the trap: the li's joined
+   textContent is "Save $100.00512 GB..." (no space between the badge
+   and the title), so /\b512/ NEVER matches it — no word boundary
+   after a digit. v2.1–v2.3 all matched capacity on joined text, so
+   they never saw the option. The button IS visible (offsetParent =
+   the li, 527x95px) — visibility was never the problem.
+
+v2.4 fixes the finder, not the click: the option is found by its
+stable test-id prefix
+(configuratorV35-selection-group-option-button-*) and capacity is read
+from its aria-labelledby card element-by-element (the <h4>'s own text
+is exactly "512 GB"); selection is read from aria-pressed on the
+button OR is-checked/aria-current on the card. Continue is found by
+its verified test id (configuratorV35-BottomBar-next-button — exactly
+1 on the page, not disabled). The old generic capacity matching stays
+as a fallback for configurator variants without the v35 test ids.
+humanClick() is unchanged. The diagnostics line now also lists the
+v35 option buttons and their pressed state.
+
+Verification: harness (`tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`) now 10/10 — the 8 earlier
+checks plus T9/T10 on a mock built from the probed live structure
+(the joined-text trap reproduced: /\b512/ fails on the li's
+textContent, the v2.4 finder still finds exactly the console button,
+pre-selected) and the full toggle-off/toggle-on/Continue flow on that
+mock. Then the extracted v2.4 code was run against the REAL page
+(`tests/validate_v24_live.py`): finder found exactly 1 candidate
+(test id ...button-8CZ4-0-0-0, pressed=true, selected=true,
+check=instock); humanClick toggled the option button off
+(pressed=false) and back on (pressed=true); Continue loaded Step 2
+Accessories. V24_LIVE_PASS.
+
+Retest (same Series S refurbished page, still in stock):
+1. Disable/remove v2.3 in Tampermonkey; install v2.4 (do not run both).
+2. Open the page, press Start. Expect: "Selectable console option
+   found", "Option already selected on load (pre-selected toggle).
+   Skipping option click.", "Clicking Continue to accessories.",
+   "Scrolling the button into view first, then clicking.", "Step 2
+   Accessories loaded."
+3. If it still fails, send the full panel log.
+
+Still unverified: the X25 restock path (X25 remains OOS); the full
+chain to Review and checkout was never clicked through (by design —
+no order is placed by the script).
