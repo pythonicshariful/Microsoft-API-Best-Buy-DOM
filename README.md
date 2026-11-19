@@ -1,6 +1,6 @@
 # Xbox X25 Stock Monitor
 
-**Version 2.10** — a small browser script that watches the Microsoft Store page for the **Xbox Series X25 Limited Edition (1TB, $899.99)** and buys it for you automatically when it comes back in stock.
+**Version 2.11** — a small browser script that watches the Microsoft Store page for the **Xbox Series X25 Limited Edition (1TB, $899.99)** and buys it for you automatically when it comes back in stock.
 
 No technical knowledge needed. If you can install a browser add-on, you can use this.
 
@@ -10,7 +10,7 @@ No technical knowledge needed. If you can install a browser add-on, you can use 
 
 0. **If you are not signed in**, it signs in for you — but only if you saved the test account password in the panel (see "Signing in by itself" below). It types the password one character at a time, like a person, and clicks **Next**.
 1. **Watches** the Xbox page. It checks the store every few seconds, at a random time between checks, so it does not check like a clock.
-2. **When the console is back in stock**, it picks the console option and clicks **Continue**.
+2. **When the console is back in stock**, it picks the console option and clicks **Continue**. The first time a check says it is back in stock, it acts right away — it does not wait for a second check. It still double-checks the page itself before clicking anything.
 3. It clicks **Review and checkout**.
 4. On the cart page, it sets the **quantity** (1 by default) and clicks **Checkout**.
 5. On the checkout page, it clicks **Place order** — but only if you turned that on (see the safety box below). Otherwise it stops there and waits for you.
@@ -31,8 +31,8 @@ While it watches, it plays a sound and flashes the browser tab title when it fin
 ## Install (do this once)
 
 1. Install **Tampermonkey** in your browser and turn it on.
-2. Open the file **`xbox-x25-stock-monitor-v2.10.user.js`** from this repo. Tampermonkey will ask if you want to install it — click **Install**.
-3. If you installed an older version before, remove it first: in Tampermonkey, delete any older "Xbox X25 Stock Monitor" script, so only version 2.10 is running. Two versions at once will fight each other.
+2. Open the file **`xbox-x25-stock-monitor-v2.11.user.js`** from this repo. Tampermonkey will ask if you want to install it — click **Install**.
+3. If you installed an older version before, remove it first: in Tampermonkey, delete any older "Xbox X25 Stock Monitor" script, so only version 2.11 is running. Two versions at once will fight each other.
 4. Open the Xbox page above. A small dark panel appears in the **bottom-right corner**. That is the script.
 
 ---
@@ -55,9 +55,13 @@ While it watches, it plays a sound and flashes the browser tab title when it fin
 - **Test sound.** Plays the alert sound so you know what it sounds like.
 - **Stop.** Stops everything.
 
+### Move and resize the panel
+
+Drag the panel by its **top bar** to move it anywhere on the screen. Drag the **small arrow in the bottom-right corner** to make it bigger or smaller. Its size and position are measured in percent of the window, so the panel scales with the window, and they are saved — the panel comes back where you left it, even on another page. **Double-click the top bar** to put it back in the bottom-right corner at its normal size.
+
 ### Your settings are saved
 
-Everything you set in the panel — **Cart Qty, ZIP / Region, check delay, Auto-attempt, the Auto PLACE ORDER box, and the saved password** — is saved in your browser the moment you change it, and it comes back the next time you open the page. **Nothing resets when the page changes or reloads.** Set it once and it stays.
+Everything you set in the panel — **Cart Qty, ZIP / Region, check delay, Auto-attempt, the Auto PLACE ORDER box, and the saved password** — is saved in your browser the moment you change it, and it comes back the next time you open the page. **Nothing resets when the page changes or reloads.** Set it once and it stays. The panel's position and size are saved too.
 
 Two things to know:
 
@@ -140,6 +144,6 @@ If it stops for any other reason, copy the whole log from the panel and send it 
 
 ## Files in this repo
 
-- **`xbox-x25-stock-monitor-v2.10.user.js`** — the script. This is the only version. Install this one.
+- **`xbox-x25-stock-monitor-v2.11.user.js`** — the script. This is the only version. Install this one.
 - **`README.md`** — this guide.
 - **`network-capture/MICROSOFT-FINDINGS.md`** — technical notes on how the store's stock check works (for developers only).
