@@ -239,3 +239,58 @@ in-stock Series S page.
 - Whether X25 uses a different availabilityId at restock time
   (v2 re-resolves identifiers at start for this reason).
 - Best Buy: no verified API at all.
+
+## Update, Nov 19: v2.1 — console-option fix (live test on refurbished Series X)
+
+Shariful tested v2 on Xbox Series X Certified Refurbished
+(8mzbmmcjznxr, $649.99, in stock). The API was right: deliverycost
+returned `isInventoryAvailable=true` twice. But the purchase stalled:
+v2 logged "No selectable option button captured" and clicked Continue
+with no option selected; the page answered with red validation
+"Please make a choice", no navigation, cart 0 items.
+
+Root cause: v2 matched console options ONLY as `<button>` elements
+whose textContent contains "1TB". On the refurbished page the 1TB
+option ("Save $150.00 1TB Full price was $799.99 now $649.99") is a
+button in the accessibility tree, but v2's textContent-only `/1TB/`
+test did not match it (the capacity text may live in aria-label or
+with spacing, and the element may carry a role rather than be a
+`<button>`). Meanwhile Continue is enabled before any option is
+chosen, so v2's "enabled Continue = in stock" shortcut fired the
+blind click. (First guess — "the option is not a button" — was
+wrong; live DOM inspection showed it IS a button in the AX tree.)
+
+Live DOM check (Nov 19, browser): clicking the 1TB option selects it
+(checked true, [pressed], summary subtotal $649.99); Continue then
+loads Step 2 Accessories ("Add your accessories", 15 items, e.g.
+controller $89.99, headset $134.99) with a "Review and checkout"
+button. Nothing was bought; the check stopped there.
+
+What v2.1 changes (file: `xbox-x25-stock-monitor-v2.1.user.js`):
+- Option finder matches capacity text (512GB / 1TB / 2TB,
+  spacing-tolerant) in textContent OR aria-label, across button,
+  `[role=button|radio|option]`, radio input, and label elements;
+  prefers the innermost match inside "Choose your console".
+- An enabled Continue alone is NO LONGER an in-stock signal. A
+  selectable console option is required.
+- After clicking the option, v2.1 VERIFIES selection (aria-pressed /
+  aria-checked / checked / selected class / summary update), with one
+  retry of the option click. If selection cannot be verified, it does
+  NOT click Continue — it alerts and stops for a human.
+- After Continue, v2.1 checks Step 2 loaded ("Add your accessories" /
+  "Review and checkout"). On "Please make a choice" it retries
+  option+Continue once, then stops.
+
+Retest (same refurbished page, still in stock):
+1. Disable/remove v2 in Tampermonkey; install v2.1 (do not run both).
+2. Open the refurbished configure page, press Start. Expect the log:
+   "Selectable console option found", "Clicking console option:
+   Save $150.00 1TB...", "Option verified selected", "Clicking
+   Continue to accessories", "Step 2 Accessories loaded".
+3. If the log instead shows "OPTION NOT SELECTED" or "VALIDATION",
+   send the panel log — do not keep clicking manually past Step 2
+   without checking.
+
+Still unverified: the X25 restock path (X25 remains OOS); the full
+chain to Review and checkout was never clicked through (by design —
+no order is placed by the script).
