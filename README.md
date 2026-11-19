@@ -294,3 +294,60 @@ Retest (same refurbished page, still in stock):
 Still unverified: the X25 restock path (X25 remains OOS); the full
 chain to Review and checkout was never clicked through (by design —
 no order is placed by the script).
+
+## Update, Nov 19: v2.2 — pre-selected toggle + human-like click (live test on Series S refurbished)
+
+Shariful tested v2.1 on Xbox Series S Certified Refurbished
+(8p01kzxz5j21, 512GB, $399.99, in stock). The API was right again
+(IN STOCK, 528ms), but the script never clicked: the DOM verify loop
+ran 25s, found no option, and resumed polling.
+
+Root cause (live inspection, Nov 19): two things at once. (1) The
+512 GB option is a PRE-SELECTED toggle button (checked true on load,
+solid blue border) — clicking it once DESELECTS it. A blind option
+click would have broken the flow. (2) The "512 GB" text lives in the
+card heading next to the button, not in the button's own textContent,
+so v2.1's textContent/aria-label match missed it. (The browser's own
+click test confirmed both: one click deselected the option, summary
+changed to "removed from summary", and Continue then showed
+"Please make a choice".)
+
+What v2.2 changes (file: `xbox-x25-stock-monitor-v2.2.user.js`):
+- Option finder matches capacity text in the button's own text,
+  aria-label, aria-labelledby targets, AND its parent card text (card
+  text counts only when the element itself shows a price, so
+  Continue/Review buttons can't false-match).
+- Toggle-aware: selection is checked FIRST. If the option is already
+  selected on load, the option click is skipped entirely and the
+  script goes straight to Continue.
+- humanClick(): fast (~100-370ms) random-waypoint pointer sequence —
+  pointerover, pointermove (2-3 random waypoints), pointerdown/up,
+  click — with a small visible blue cursor dot that moves to the
+  target. NOTE: synthetic events are still isTrusted=false; no
+  userscript can produce trusted input. The sequence fires the same
+  handlers a real click fires, with random timing.
+- On a DOM-confirm failure, v2.2 logs one "DOM diagnostics" line
+  listing capacity-text elements, so the next miss is debuggable from
+  the panel log.
+
+Harness verification (headless Chromium, mock pages built from the
+observed live structure; `tests/test_finder.py`, exact file code
+extracted by `tests/extract_finder.js`): 8/8 checks pass — finder
+finds the pre-selected S option (sibling-h4 case) and the X variant,
+selected state reads true/false correctly, humanClick re-selects a
+deselected option and Continue loads Step 2, OOS option excluded.
+Live retest on the real page still pending.
+
+Retest (same Series S refurbished page, still in stock):
+1. Disable/remove v2.1 in Tampermonkey; install v2.2 (do not run both).
+2. Open the page, press Start. Expect the log: "Selectable console
+   option found", "Option already selected on load (pre-selected
+   toggle). Skipping option click.", "Clicking Continue to
+   accessories.", "Step 2 Accessories loaded." You will see a small
+   blue dot move quickly to the buttons.
+3. If a "DOM diagnostics" line appears, or "OPTION NOT SELECTED" /
+   "VALIDATION" shows, send the panel log.
+
+Still unverified: the X25 restock path (X25 remains OOS); the full
+chain to Review and checkout was never clicked through (by design —
+no order is placed by the script).
